@@ -2,8 +2,6 @@ import { BlockId } from "near-api-js/lib/providers/provider";
 import { initViewer, writeCSV, config } from "./utils/helper";
 import { nearSocialGet } from "./utils/social";
 
-// let viewer: Account;
-
 async function getProject(accountId: string, blockId: BlockId) {
   const viewer = await initViewer();
   console.log("Query project details of %s at block %s", accountId, blockId);
@@ -68,10 +66,6 @@ async function getProjects(contractId: string, blockId: BlockId) {
 }
 
 async function main() {
-  // const network = "mainnet";
-  // const config = getConfig(network);
-  // viewer = await initViewer(config);
-
   const blockHeight = 103_326_151; // await getBlockHeightAt(Date.now());
   const projects = await getProjects(config.nearHorizonContractId, blockHeight);
   await writeCSV(`./dataset/local/near-horizon-projects.csv`, projects);

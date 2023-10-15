@@ -42,6 +42,7 @@ async function main() {
   const catalog = await queryCatalog();
 
   const rows = await readCSV("./dataset/local/awesome-bos-catalog.csv");
+  // only create catalog for verified projects
   const verified = rows.filter((p) => p.verified === "Y");
   const projects: Record<string, Project> = {};
   for (const p of verified) {
