@@ -22,7 +22,7 @@ export const readCSV = async (filename: string): Promise<Array<any>> => {
       })
       .on("end", () => {
         console.log("CSV file successfully processed");
-        console.log(`Total # of accounts from CSV: ${table.length}`);
+        console.log(`Total # of rows from CSV: ${table.length}`);
         resolve(table);
       });
   });

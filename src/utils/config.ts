@@ -1,6 +1,5 @@
 import { keyStores } from "near-api-js";
 import { NearConfig } from "near-api-js/lib/near";
-import { optionalEnv } from "./env";
 
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
@@ -33,7 +32,7 @@ export interface Config {
   nearHorizonContractId: string;
   database: {
     nearIndexer: DatabaseConfig;
-    nearValidatorMonitor?: Optional<DatabaseConfig, "username" | "password">;
+    legacyAwesomeNEAR?: DatabaseConfig;
   };
 }
 
@@ -70,22 +69,16 @@ const configs: Record<Network, Config> = {
           idle: 10000,
         },
       },
-      nearValidatorMonitor: {
-        host: "psql-cornerstone-data-do-user-10411954-0.b.db.ondigitalocean.com",
-        port: 25060,
-        username: optionalEnv("NEAR_VALIDATOR_MONITOR_DB_USERNAME"),
-        password: optionalEnv("NEAR_VALIDATOR_MONITOR_DB_PASSWORD"),
-        database: "near-validators-monitor",
+      legacyAwesomeNEAR: {
+        host: "localhost",
+        port: 5432,
+        username: "public_readonly",
+        password: "nearprotocol",
+        database: "mainnet_explorer",
         pool: {
           max: 5,
           min: 0,
           idle: 10000,
-        },
-        dialectOptions: {
-          ssl: {
-            require: true,
-            rejectUnauthorized: false,
-          },
         },
       },
     },
