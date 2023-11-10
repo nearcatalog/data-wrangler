@@ -15,3 +15,15 @@ export async function nearSocialGet(contractId: string, path: string) {
     // blockQuery,
   });
 }
+
+export async function nearSocialKeys(contractId: string, path: string) {
+  const viewer = await initViewer();
+  return viewer.viewFunctionV2({
+    contractId,
+    methodName: "keys",
+    args: {
+      keys: [path],
+    },
+    // blockQuery,
+  });
+}
