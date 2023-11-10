@@ -91,8 +91,8 @@ interface NearSocialProject {
   bos?: BOS;
   stage?: string;
   auditing?: Auditing;
-  contract?: Contracts;
-  token?: Tokens;
+  contracts?: Contracts;
+  tokens?: Tokens;
   team?: number;
   validator?: Validators;
   investor?: Investors;
@@ -100,6 +100,8 @@ interface NearSocialProject {
 }
 
 interface AwesomeNearProject {
+  id: string;
+  slug: string;
   title: string;
   oneliner: string;
   description: string;
@@ -117,6 +119,12 @@ interface AwesomeNearProject {
   astroDAO: string;
   whitepaper: string;
   status: string;
+}
+
+interface AwesomeNearContract {
+  address: string;
+  name: string;
+  projectId: string;
 }
 
 function parseCategories(categories: string): Tags {
@@ -179,6 +187,37 @@ async function queryLegacyAwesomeNEAR() {
   return data[config.legacyAwesomeNearAccountId].project;
 }
 
+function findContracts(
+  slug: string,
+  projects: AwesomeNearProject[],
+  contracts: AwesomeNearContract[]
+) {
+  // exclude DAO contracts on AstroDAO / SputnikDAO because it contains too many contracts
+  if (slug === "astrodao") {
+    return { "sputnik-dao.near": "" };
+  } else if (slug === "mintbase") {
+    return { "mintbase1.near": "" };
+  }
+
+  const project = projects.filter((p) => p.slug === slug)[0];
+  const addresses = contracts
+    .filter((c) => c.projectId === project.id)
+    .map((c) => c.address);
+  if (addresses.length > 0) {
+    const data: Contracts = {};
+    for (const address of addresses) {
+      data[address] = "";
+    }
+    // add contract address for NEAR Social
+    if (slug === "near-social-social08") {
+      data["social.near"] = "";
+    }
+    return data;
+  } else {
+    return null;
+  }
+}
+
 async function main() {
   const now = Date.now();
   const { nearSocialContractId, legacyAwesomeNearAccountId } = config;
@@ -193,13 +232,16 @@ async function main() {
   const legacy = await queryLegacyAwesomeNEAR();
   const projects = await readCSV("./dataset/local/awesome-near-projects.csv");
   const catalog = await readCSV("./dataset/local/awesome-bos-catalog.csv");
+  const contracts = await readCSV("./dataset/local/awesome-near-contracts.csv");
+  // const tokens = await readCSV("./dataset/local/awesome-near-tokens.csv");
+  // const tokensToProject = await readCSV("./dataset/local/awesome-near-tokens-to-project.csv");
 
   const slugs = catalog
     .filter(
       (p) =>
         p.verified === "Y" &&
         p["source.awesomenear"] &&
-        !legacy[p["source.awesomenear"]]
+        legacy[p["source.awesomenear"]]
     )
     .map((p) => p["source.awesomenear"]);
 
@@ -214,8 +256,16 @@ async function main() {
 
     for (const slug of processing) {
       const project = projects.filter((p) => p.slug === slug)[0];
-      const transformed = awesomeNearProjectToNearSocial(project);
-      uploadData[slug] = transformed;
+      if (project) {
+        const transformed = awesomeNearProjectToNearSocial(project);
+        const projectContracts = findContracts(slug, projects, contracts);
+        if (projectContracts) {
+          transformed.profile.contracts = projectContracts;
+        }
+        uploadData[slug] = transformed;
+      } else {
+        console.error("Missing project", slug);
+      }
     }
 
     console.log(
