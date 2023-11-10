@@ -19,8 +19,8 @@ interface Image {
 }
 
 interface Icon {
-  thumb: string;
-  small: string;
+  thumb?: string;
+  small?: string;
 }
 
 interface Address {
@@ -30,9 +30,9 @@ interface Address {
   octopus?: string;
 }
 
-interface Buy {
-  url: string;
-}
+// interface Buy {
+//   url: string;
+// }
 
 interface Platform {
   coingecko?: string;
@@ -44,7 +44,7 @@ interface Token {
   name: string;
   icon: Icon;
   address: Address;
-  buy: Buy;
+  // buy: Buy;
   platform: Platform;
 }
 
@@ -127,6 +127,24 @@ interface AwesomeNearContract {
   projectId: string;
 }
 
+interface AwesomeNearToken {
+  id: string;
+  symbol: string;
+  name: string;
+  imageThumb: string;
+  imageSmall: string;
+  auroraAddress: string;
+  coinGeckoId: string;
+  ethAddress: string;
+  nearAddress: string;
+  octAddress: string;
+}
+
+interface AwesomeNearTokenToProject {
+  projectId: string;
+  tokenId: string;
+}
+
 function parseCategories(categories: string): Tags {
   const tags: Tags = {};
   for (const c of categories.slice(1, categories.length - 1).split(",")) {
@@ -177,16 +195,6 @@ function awesomeNearProjectToNearSocial(project: AwesomeNearProject) {
   };
 }
 
-async function queryLegacyAwesomeNEAR() {
-  // NEAR_ENV=mainnet near view social.near get '{"keys":["legacy-awesome.near/project/octopus-network"]}'
-  const data = await nearSocialKeys(
-    config.nearSocialContractId,
-    `${config.legacyAwesomeNearAccountId}/project/*`
-  );
-  console.log("Legacy Awesome NEAR Data", JSON.stringify(data, null, 2));
-  return data[config.legacyAwesomeNearAccountId].project;
-}
-
 function findContracts(
   slug: string,
   projects: AwesomeNearProject[],
@@ -218,6 +226,77 @@ function findContracts(
   }
 }
 
+function awesomeNearTokenToNearSocialToken(token: AwesomeNearToken): Token {
+  const icon: Icon = {};
+  if (token.imageThumb) {
+    icon.thumb = token.imageThumb;
+  }
+  if (token.imageSmall) {
+    icon.small = token.imageSmall;
+  }
+
+  const address: Address = {};
+  if (token.nearAddress) {
+    address.near = token.nearAddress;
+  }
+  if (token.auroraAddress) {
+    address.aurora = token.auroraAddress;
+  }
+  if (token.octAddress) {
+    address.octopus = token.octAddress;
+  }
+  if (token.ethAddress) {
+    address.ethereum = token.ethAddress;
+  }
+
+  const platform: Platform = {};
+  if (token.coinGeckoId) {
+    platform.coingecko = token.coinGeckoId;
+  }
+
+  return {
+    symbol: token.symbol,
+    name: token.name,
+    icon,
+    address,
+    platform,
+  };
+}
+
+function findTokens(
+  slug: string,
+  projects: AwesomeNearProject[],
+  tokens: AwesomeNearToken[],
+  tokensToProjects: AwesomeNearTokenToProject[]
+) {
+  const project = projects.filter((p) => p.slug === slug)[0];
+  const tokenIds = tokensToProjects
+    .filter((t) => t.projectId === project.id)
+    .map((t) => t.tokenId);
+  if (tokenIds.length > 0) {
+    const data: Tokens = {};
+    for (const tokenId of tokenIds) {
+      const found = tokens.filter((t) => t.id === tokenId)[0];
+      if (found && found.symbol) {
+        data[found.symbol] = awesomeNearTokenToNearSocialToken(found);
+      }
+    }
+    return data;
+  } else {
+    return null;
+  }
+}
+
+async function queryLegacyAwesomeNEAR() {
+  // NEAR_ENV=mainnet near view social.near get '{"keys":["legacy-awesome.near/project/octopus-network"]}'
+  const data = await nearSocialKeys(
+    config.nearSocialContractId,
+    `${config.legacyAwesomeNearAccountId}/project/*`
+  );
+  console.log("Legacy Awesome NEAR Data", JSON.stringify(data, null, 2));
+  return data[config.legacyAwesomeNearAccountId].project;
+}
+
 async function main() {
   const now = Date.now();
   const { nearSocialContractId, legacyAwesomeNearAccountId } = config;
@@ -233,8 +312,10 @@ async function main() {
   const projects = await readCSV("./dataset/local/awesome-near-projects.csv");
   const catalog = await readCSV("./dataset/local/awesome-bos-catalog.csv");
   const contracts = await readCSV("./dataset/local/awesome-near-contracts.csv");
-  // const tokens = await readCSV("./dataset/local/awesome-near-tokens.csv");
-  // const tokensToProject = await readCSV("./dataset/local/awesome-near-tokens-to-project.csv");
+  const tokens = await readCSV("./dataset/local/awesome-near-tokens.csv");
+  const tokensToProject = await readCSV(
+    "./dataset/local/awesome-near-tokens-to-project.csv"
+  );
 
   const slugs = catalog
     .filter(
@@ -257,11 +338,24 @@ async function main() {
     for (const slug of processing) {
       const project = projects.filter((p) => p.slug === slug)[0];
       if (project) {
+        // transform to NEAR Social projects
         const transformed = awesomeNearProjectToNearSocial(project);
+        // find contracts
         const projectContracts = findContracts(slug, projects, contracts);
         if (projectContracts) {
           transformed.profile.contracts = projectContracts;
         }
+        // find tokens
+        const projectTokens = findTokens(
+          slug,
+          projects,
+          tokens,
+          tokensToProject
+        );
+        if (projectTokens) {
+          transformed.profile.tokens = projectTokens;
+        }
+
         uploadData[slug] = transformed;
       } else {
         console.error("Missing project", slug);
