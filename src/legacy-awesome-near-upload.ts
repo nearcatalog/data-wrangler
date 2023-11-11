@@ -1,4 +1,4 @@
-import { Gas, NEAR } from "near-units";
+import { Gas } from "near-units";
 import { config, readCSV } from "./utils/helper";
 import { getNearContract } from "./utils/near";
 import { nearSocialKeys } from "./utils/social";
@@ -42,10 +42,10 @@ interface Platform {
 interface Token {
   symbol: string;
   name: string;
-  icon: Icon;
-  address: Address;
+  icon?: Icon;
+  address?: Address;
   // buy: Buy;
-  platform: Platform;
+  platform?: Platform;
 }
 
 type LinkType =
@@ -145,6 +145,10 @@ interface AwesomeNearTokenToProject {
   tokenId: string;
 }
 
+function isValidObject(obj: any) {
+  return obj && Object.keys(obj).length > 0;
+}
+
 function parseCategories(categories: string): Tags {
   const tags: Tags = {};
   for (const c of categories.slice(1, categories.length - 1).split(",")) {
@@ -227,12 +231,20 @@ function findContracts(
 }
 
 function awesomeNearTokenToNearSocialToken(token: AwesomeNearToken): Token {
+  const transformed: Token = {
+    symbol: token.symbol,
+    name: token.name,
+  };
+
   const icon: Icon = {};
   if (token.imageThumb) {
     icon.thumb = token.imageThumb;
   }
   if (token.imageSmall) {
     icon.small = token.imageSmall;
+  }
+  if (isValidObject(icon)) {
+    transformed.icon = icon;
   }
 
   const address: Address = {};
@@ -248,19 +260,19 @@ function awesomeNearTokenToNearSocialToken(token: AwesomeNearToken): Token {
   if (token.ethAddress) {
     address.ethereum = token.ethAddress;
   }
+  if (isValidObject(address)) {
+    transformed.address = address;
+  }
 
   const platform: Platform = {};
   if (token.coinGeckoId) {
     platform.coingecko = token.coinGeckoId;
   }
+  if (isValidObject(platform)) {
+    transformed.platform = platform;
+  }
 
-  return {
-    symbol: token.symbol,
-    name: token.name,
-    icon,
-    address,
-    platform,
-  };
+  return transformed;
 }
 
 function findTokens(
@@ -342,7 +354,7 @@ async function main() {
         const transformed = awesomeNearProjectToNearSocial(project);
         // find contracts
         const projectContracts = findContracts(slug, projects, contracts);
-        if (projectContracts) {
+        if (projectContracts && isValidObject(projectContracts)) {
           transformed.profile.contracts = projectContracts;
         }
         // find tokens
@@ -352,45 +364,51 @@ async function main() {
           tokens,
           tokensToProject
         );
-        if (projectTokens) {
+        if (projectTokens && isValidObject(projectTokens)) {
           transformed.profile.tokens = projectTokens;
         }
 
-        uploadData[slug] = transformed;
+        if (transformed.profile.contracts || transformed.profile.tokens) {
+          uploadData[slug] = transformed;
+        }
       } else {
         console.error("Missing project", slug);
       }
     }
 
-    console.log(
-      `${processing.length} projects to upload`,
-      JSON.stringify(
-        {
+    if (isValidObject(uploadData)) {
+      console.log(
+        `${processing.length} projects to upload`,
+        JSON.stringify(
+          {
+            data: {
+              [legacyAwesomeNearAccountId]: {
+                project: uploadData,
+              },
+            },
+          },
+          null,
+          2
+        )
+      );
+
+      console.log(
+        `[${new Date(
+          now
+        ).toISOString()}] Uploading Legacy Awesome NEAR data ...`
+      );
+
+      await contract.set({
+        args: {
           data: {
             [legacyAwesomeNearAccountId]: {
               project: uploadData,
             },
           },
         },
-        null,
-        2
-      )
-    );
-
-    console.log(
-      `[${new Date(now).toISOString()}] Uploading Legacy Awesome NEAR data ...`
-    );
-
-    await contract.set({
-      args: {
-        data: {
-          [legacyAwesomeNearAccountId]: {
-            project: uploadData,
-          },
-        },
-      },
-      gas: Gas.parse("150 Tgas").toString(10),
-      amount: NEAR.parse("0.5 NEAR").toString(10),
-    });
+        gas: Gas.parse("150 Tgas").toString(10),
+        // amount: NEAR.parse("0.5 NEAR").toString(10),
+      });
+    }
   }
 }
