@@ -1,2 +1,2 @@
 # data-wrangler
-Awesome BOS Project Data Wrangler
+NEAR Catalog Project Data Wrangler
