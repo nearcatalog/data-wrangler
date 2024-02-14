@@ -2,7 +2,7 @@ import { initViewer } from "./helper";
 
 export async function nearSocialGet(contractId: string, path: string) {
   const viewer = await initViewer();
-  return viewer.viewFunctionV2({
+  return viewer.viewFunction({
     contractId,
     methodName: "get",
     args: {
@@ -18,7 +18,7 @@ export async function nearSocialGet(contractId: string, path: string) {
 
 export async function nearSocialKeys(contractId: string, path: string) {
   const viewer = await initViewer();
-  return viewer.viewFunctionV2({
+  return viewer.viewFunction({
     contractId,
     methodName: "keys",
     args: {

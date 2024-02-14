@@ -65,6 +65,7 @@ export async function getNearContract(
     contracts[contractId] = new Contract(account, contractId, {
       viewMethods,
       changeMethods,
+      useLocalViewExecution: false,
     });
   }
 

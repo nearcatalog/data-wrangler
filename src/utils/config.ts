@@ -32,7 +32,6 @@ export interface Config {
   nearHorizonContractId: string;
   database: {
     nearIndexer: DatabaseConfig;
-    legacyAwesomeNEAR?: DatabaseConfig;
   };
 }
 
@@ -59,18 +58,6 @@ const configs: Record<Network, Config> = {
     database: {
       nearIndexer: {
         host: "mainnet.db.explorer.indexer.near.dev",
-        port: 5432,
-        username: "public_readonly",
-        password: "nearprotocol",
-        database: "mainnet_explorer",
-        pool: {
-          max: 5,
-          min: 0,
-          idle: 10000,
-        },
-      },
-      legacyAwesomeNEAR: {
-        host: "localhost",
         port: 5432,
         username: "public_readonly",
         password: "nearprotocol",
