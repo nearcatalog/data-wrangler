@@ -13,35 +13,33 @@ interface Project {
 }
 
 async function queryCatalog() {
-  const { nearSocialContractId, awesomeBosAccountId } = config;
-  // NEAR_ENV=mainnet near view social.near get '{"keys":["awesomebos.near/catalog/**"]}'
+  const { nearSocialContractId, nearCatalogAccountId } = config;
+  // NEAR_ENV=mainnet near view social.near get '{"keys":["nearcatalog.near/catalog/**"]}'
   const data = await nearSocialGet(
     nearSocialContractId,
-    `${awesomeBosAccountId}/catalog/**`
+    `${nearCatalogAccountId}/catalog/**`
   );
-  const catalog = data[awesomeBosAccountId].catalog;
+  const catalog = data[nearCatalogAccountId].catalog;
   console.log(`${Object.keys(catalog).length} projects in the catalog`);
   return catalog;
 }
 
 async function main() {
   const now = Date.now();
-  const { nearSocialContractId, awesomeBosAccountId } = config;
+  const { nearSocialContractId, nearCatalogAccountId } = config;
 
   const contract = (await getNearContract(
     nearSocialContractId,
-    awesomeBosAccountId,
+    nearCatalogAccountId,
     ["get"],
     ["set"]
   )) as any;
 
-  console.log(
-    `[${new Date(now).toISOString()}] Creating Awesome BOS catalog ...`
-  );
+  console.log(`[${new Date(now).toISOString()}] Creating catalog ...`);
 
   const catalog = await queryCatalog();
 
-  const rows = await readCSV("./dataset/local/awesome-bos-catalog.csv");
+  const rows = await readCSV("./dataset/local/near-catalog.csv");
   // only create catalog for verified projects
   const verified = rows.filter((p) => p.verified === "Y");
   const projects: Record<string, Project> = {};
@@ -66,7 +64,7 @@ async function main() {
   await contract.set({
     args: {
       data: {
-        [awesomeBosAccountId]: {
+        [nearCatalogAccountId]: {
           catalog: projects,
         },
       },
@@ -76,5 +74,5 @@ async function main() {
   });
 
   await queryCatalog();
-  // console.log('Awesome BOS Catalog', JSON.stringify(catalog, null, 2));
+  // console.log('Catalog', JSON.stringify(catalog, null, 2));
 }

@@ -27,7 +27,7 @@ export interface Config {
   near: NearConfig;
   subgraph: SubgraphConfig;
   nearSocialContractId: string;
-  awesomeBosAccountId: string;
+  nearCatalogAccountId: string;
   legacyAwesomeNearAccountId: string;
   nearHorizonContractId: string;
   database: {
@@ -50,10 +50,10 @@ const configs: Record<Network, Config> = {
       helperUrl: "https://helper.near.org",
     },
     subgraph: {
-      apiUrl: "https://api.thegraph.com/subgraphs/name/awesome-bos/near-social",
+      apiUrl: "https://api.thegraph.com/subgraphs/name/nearcatalog/catalog",
     },
     nearSocialContractId: "social.near",
-    awesomeBosAccountId: "awesomebos.near",
+    nearCatalogAccountId: "nearcatalog.near",
     legacyAwesomeNearAccountId: "legacy-awesome.near",
     nearHorizonContractId: "nearhorizon.near",
     database: {
@@ -95,10 +95,10 @@ const configs: Record<Network, Config> = {
     },
     subgraph: {
       apiUrl:
-        "https://api.thegraph.com/subgraphs/name/awesome-bos/near-social-testnet",
+        "https://api.thegraph.com/subgraphs/name/nearcatalog/catalog-testnet",
     },
     nearSocialContractId: "v1.social08.testnet",
-    awesomeBosAccountId: "awesomebos.testnet",
+    nearCatalogAccountId: "nearcatalog.testnet",
     legacyAwesomeNearAccountId: "legacy-awesome.testnet",
     nearHorizonContractId: "nearhorizon.testnet",
     database: {

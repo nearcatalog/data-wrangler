@@ -322,7 +322,7 @@ async function main() {
 
   const legacy = await queryLegacyAwesomeNEAR();
   const projects = await readCSV("./dataset/local/awesome-near-projects.csv");
-  const catalog = await readCSV("./dataset/local/awesome-bos-catalog.csv");
+  const catalog = await readCSV("./dataset/local/near-catalog.csv");
   const contracts = await readCSV("./dataset/local/awesome-near-contracts.csv");
   const tokens = await readCSV("./dataset/local/awesome-near-tokens.csv");
   const tokensToProject = await readCSV(
