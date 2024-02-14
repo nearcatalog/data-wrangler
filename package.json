@@ -12,7 +12,6 @@
     "write:awesomenear": "ts-node src/legacy-awesome-near-upload.ts",
     "query:horizon": "ts-node src/near-horizon-projects.ts"
   },
-  "author": "linguists",
   "license": "ISC",
   "dependencies": {
     "@urql/core": "^4.1.2",
