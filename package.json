@@ -1,7 +1,7 @@
 {
   "name": "near-catalog-data-wrangler",
   "version": "0.1.0",
-  "description": "Awesome BOS Data Wrangler",
+  "description": "NEAR Catalog Data Wrangler",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
