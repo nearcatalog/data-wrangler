@@ -1,7 +1,7 @@
 import { Gas } from "near-units";
 import { config, readCSV } from "./utils/helper";
 import { getNearContract } from "./utils/near";
-import { nearSocialKeys } from "./utils/social";
+// import { nearSocialKeys } from "./utils/social";
 
 main().catch((e) => console.error(e));
 
@@ -77,6 +77,7 @@ interface BOS {
 }
 
 interface NearSocialProject {
+  slug: string;
   name: string;
   tagline: string;
   description: string;
@@ -186,6 +187,7 @@ function parseImage(logo: string): Image {
 
 function awesomeNearProjectToNearSocial(project: AwesomeNearProject) {
   const transformed: NearSocialProject = {
+    slug: project.slug,
     name: project.title,
     tagline: project.oneliner,
     description: project.description,
@@ -299,28 +301,28 @@ function findTokens(
   }
 }
 
-async function queryLegacyAwesomeNEAR() {
-  // NEAR_ENV=mainnet near view social.near get '{"keys":["legacy-awesome.near/project/octopus-network"]}'
-  const data = await nearSocialKeys(
-    config.nearSocialContractId,
-    `${config.legacyAwesomeNearAccountId}/project/*`
-  );
-  console.log("Legacy Awesome NEAR Data", JSON.stringify(data, null, 2));
-  return data[config.legacyAwesomeNearAccountId].project;
-}
+// async function queryLegacyAwesomeNEAR() {
+//   // NEAR_ENV=mainnet near view social.near get '{"keys":["legacy-awesome.near/project/octopus-network"]}'
+//   const data = await nearSocialKeys(
+//     config.nearSocialContractId,
+//     `${config.legacyAwesomeNearAccountId}/project/*`
+//   );
+//   console.log("Legacy Awesome NEAR Data", JSON.stringify(data, null, 2));
+//   return data[config.legacyAwesomeNearAccountId].project;
+// }
 
 async function main() {
-  const now = Date.now();
-  const { nearSocialContractId, legacyAwesomeNearAccountId } = config;
+  // const now = Date.now();
+  const { inscriptionContractId } = config;
 
   const contract = (await getNearContract(
-    nearSocialContractId,
-    legacyAwesomeNearAccountId,
-    ["get"],
-    ["set"]
+    inscriptionContractId,
+    "bot.testnet",
+    [],
+    ["inscribe"]
   )) as any;
 
-  const legacy = await queryLegacyAwesomeNEAR();
+  // const legacy = await queryLegacyAwesomeNEAR();
   const projects = await readCSV("./dataset/local/awesome-near-projects.csv");
   const catalog = await readCSV("./dataset/local/near-catalog.csv");
   const contracts = await readCSV("./dataset/local/awesome-near-contracts.csv");
@@ -331,10 +333,8 @@ async function main() {
 
   const slugs = catalog
     .filter(
-      (p) =>
-        p.verified === "Y" &&
-        p["source.awesomenear"] &&
-        legacy[p["source.awesomenear"]]
+      (p) => p.verified === "Y" && p["source.awesomenear"]
+      // legacy[p["source.awesomenear"]]
     )
     .map((p) => p["source.awesomenear"]);
 
@@ -342,7 +342,7 @@ async function main() {
 
   const limit = 5;
 
-  for (let start = 0; start < slugs.length; start += limit) {
+  for (let start = 7; start < slugs.length; start += limit) {
     const processing = slugs.slice(start, start + limit);
 
     const uploadData: Record<string, any> = {};
@@ -371,44 +371,65 @@ async function main() {
         if (transformed.profile.contracts || transformed.profile.tokens) {
           uploadData[slug] = transformed;
         }
+
+        const data = transformed.profile;
+
+        console.log(`uploading project ${slug}`, JSON.stringify(data, null, 2));
+
+        let retry = 5;
+        while (retry-- > 0) {
+          try {
+            await contract.inscribe({
+              args: {
+                p: "nearcatalog",
+                op: "submit_project",
+                ...data,
+              },
+              gas: Gas.parse("30 Tgas").toString(10),
+            });
+            break;
+          } catch (e) {
+            console.error(e);
+          }
+        }
       } else {
         console.error("Missing project", slug);
       }
     }
 
-    if (isValidObject(uploadData)) {
-      console.log(
-        `${processing.length} projects to upload`,
-        JSON.stringify(
-          {
-            data: {
-              [legacyAwesomeNearAccountId]: {
-                project: uploadData,
-              },
-            },
-          },
-          null,
-          2
-        )
-      );
+    // if (isValidObject(uploadData)) {
+    // console.log(
+    //   `${processing.length} projects to upload`,
+    //   JSON.stringify(
+    //     {
+    //       data: {
+    //         [legacyAwesomeNearAccountId]: {
+    //           project: uploadData,
+    //         },
+    //       },
+    //     },
+    //     null,
+    //     2
+    //   )
+    // );
 
-      console.log(
-        `[${new Date(
-          now
-        ).toISOString()}] Uploading Legacy Awesome NEAR data ...`
-      );
+    // console.log(
+    //   `[${new Date(
+    //     now
+    //   ).toISOString()}] Uploading Legacy Awesome NEAR data ...`
+    // );
 
-      await contract.set({
-        args: {
-          data: {
-            [legacyAwesomeNearAccountId]: {
-              project: uploadData,
-            },
-          },
-        },
-        gas: Gas.parse("150 Tgas").toString(10),
-        // amount: NEAR.parse("0.5 NEAR").toString(10),
-      });
-    }
+    // await contract.set({
+    //   args: {
+    //     data: {
+    //       [legacyAwesomeNearAccountId]: {
+    //         project: uploadData,
+    //       },
+    //     },
+    //   },
+    //   gas: Gas.parse("150 Tgas").toString(10),
+    //   // amount: NEAR.parse("0.5 NEAR").toString(10),
+    // });
+    // }
   }
 }

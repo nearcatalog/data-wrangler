@@ -30,6 +30,7 @@ export interface Config {
   nearCatalogAccountId: string;
   legacyAwesomeNearAccountId: string;
   nearHorizonContractId: string;
+  inscriptionContractId: string;
   database: {
     nearIndexer: DatabaseConfig;
   };
@@ -55,6 +56,7 @@ const configs: Record<Network, Config> = {
     nearCatalogAccountId: "nearcatalog.near",
     legacyAwesomeNearAccountId: "legacy-awesome.near",
     nearHorizonContractId: "nearhorizon.near",
+    inscriptionContractId: "inscription.near",
     database: {
       nearIndexer: {
         host: "mainnet.db.explorer.indexer.near.dev",
@@ -88,6 +90,7 @@ const configs: Record<Network, Config> = {
     nearCatalogAccountId: "nearcatalog.testnet",
     legacyAwesomeNearAccountId: "legacy-awesome.testnet",
     nearHorizonContractId: "nearhorizon.testnet",
+    inscriptionContractId: "inscription.testnet",
     database: {
       nearIndexer: {
         host: "testnet.db.explorer.indexer.near.dev",

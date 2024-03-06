@@ -4,7 +4,7 @@ import fs from "fs";
 import csvParser from "csv-parser";
 import { createObjectCsvWriter } from "csv-writer";
 
-const NETWORK = "mainnet";
+const NETWORK = "testnet";
 export const config = getConfig(NETWORK);
 
 export async function initViewer(c: Config = config) {
